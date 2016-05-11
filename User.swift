@@ -12,14 +12,20 @@ class User {
 
 	// MARK: - Properties
 	
-	let firstName: String
-	let secondName: String
+	var firstName = ""
+	var secondName = ""
 	let id = Int(arc4random())
+	
+	var courses = [Course]()
+	
+	static var currentUser: User?
 	
 	private static let knownUsers = [
 		"r.shimoda@icloud.com": "dasmo",
 		"phegarty@icloud.com": "AAPL"
 	]
+	
+	// TODO: Load from CoreData/NSUserDefaults
 	
 	private static var users = [String: User]()
 		
@@ -32,7 +38,7 @@ class User {
 	
 	// MARK: - Actions
 	
-	static func loadUsers() {
+	static func loadUserData() {
 		// Load users from CoreData/NSUserDefaults...
 	}
 	

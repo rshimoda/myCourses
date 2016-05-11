@@ -631,6 +631,7 @@
             <objects>
                 <splitViewController id="0Js-Ox-n3R" sceneMemberID="viewController">
                     <tabBarItem key="tabBarItem" title="Properties" image="info" id="Xqg-0x-PmI"/>
+                    <splitViewMasterSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
                     <connections>
                         <segue destination="Uj4-50-hJV" kind="relationship" relationship="masterViewController" id="5H4-6N-0S3"/>
                         <segue destination="cIn-VZ-atf" kind="relationship" relationship="detailViewController" id="gze-fE-d79"/>

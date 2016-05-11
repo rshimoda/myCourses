@@ -9,7 +9,7 @@
 import UIKit
 
 
-protocol SignInDataSource {
+protocol SignInDelegate {
 	func setUser(name: String, password: String) -> Bool
 }
 
@@ -23,6 +23,8 @@ class SignInViewController: UIViewController, UITextFieldDelegate {
 	@IBOutlet weak var nameTextField: UITextField!
 	@IBOutlet weak var passwordTextField: UITextField!
 	@IBOutlet weak var doneButton: UIBarButtonItem!
+	
+	// MARK: - Loading
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()

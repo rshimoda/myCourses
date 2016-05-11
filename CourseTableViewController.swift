@@ -9,12 +9,15 @@
 import UIKit
 
 
-class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, DZNEmptyDataSetDelegate {
+class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, DZNEmptyDataSetDelegate, SignInDelegate {
 	
 	// MARK: - Properties
 	
-	var courses = [Course]()
-	var user: User?
+	var user = User.currentUser {
+		willSet {
+			User.currentUser = newValue
+		}
+	}
 	@IBOutlet weak var signUpBarButtonItem: UIBarButtonItem!
 
 	// MARK: - Loading
@@ -33,7 +36,9 @@ class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, D
 			signUpBarButtonItem.tintColor = UIColor.blueColor()
 		}
 
-		loadCourses()
+		if user != nil {
+			loadCourses()
+		}
 		
 		self.tableView.reloadData()
 		
@@ -54,7 +59,7 @@ class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, D
 		course2.rating = 4
 		course2.courseImage = courseImage
 		
-		courses += [course1,  course2]
+		user?.courses += [course1,  course2]
 	}
 
     override func didReceiveMemoryWarning() {
@@ -91,6 +96,17 @@ class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, D
 		ac.addAction(UIAlertAction(title: "Okay", style: .Default, handler: nil))
 		presentViewController(ac, animated: true, completion: nil)
 	}
+	
+	// MARK: - SignInDelegate
+	
+	func setUser(name: String, password: String) -> Bool {
+		if let newUser = User.getUserIfExists(name, password: password) {
+			user = newUser
+			return true
+		} else {
+			return false
+		}
+	}
 
     // MARK: - Table view data source
 
@@ -101,7 +117,7 @@ class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, D
 
     override func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         // Return the number of rows
-        return courses.count
+        return user?.courses.count ?? 0
     }
 
     override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
@@ -109,11 +125,11 @@ class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, D
         let cell = tableView.dequeueReusableCellWithIdentifier(cellIdentifier, forIndexPath: indexPath) as! CourseTableViewCell
 		
 
-		let course = courses[indexPath.row]
+		let course = user?.courses[indexPath.row]
 		
-		cell.courseName.text = course.name
-		cell.universityName.text = course.university
-		cell.ratingControl.rating = course.rating
+		cell.courseName.text = course!.name
+		cell.universityName.text = course!.university
+		cell.ratingControl.rating = course!.rating
 		
         return cell
     }
