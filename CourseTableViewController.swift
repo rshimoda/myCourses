@@ -170,15 +170,26 @@ class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, D
     }
     */
 
-    /*
+    
     // MARK: - Navigation
 
     // In a storyboard-based application, you will often want to do a little preparation before navigation
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
         // Get the new view controller using segue.destinationViewController.
         // Pass the selected object to the new view controller.
+        if segue.destinationViewController is SignInViewController {
+            if user != nil {
+                let alertController = UIAlertController(title: "You're already logged in", message: "Do you want to relogin?", preferredStyle: .Alert)
+                alertController.addAction(UIAlertAction(title: "Log Out", style: .Default, handler: {(action: UIAlertAction) -> Void in
+                    alertController.dismissViewControllerAnimated(true, completion: nil)
+                    self.user = nil
+                }))
+                alertController.addAction(UIAlertAction(title: "Cancel", style: .Cancel, handler: nil))
+                presentViewController(alertController, animated: true, completion: nil)
+            }
+        }
     }
-    */
+
 	
 	@IBAction func unwindToCourseList(sender: UIStoryboardSegue) {
 		if sender.sourceViewController is SignInViewController {
