@@ -8,18 +8,36 @@
 
 import UIKit
 
-class ViewController: UIViewController {
-
+class ViewController: UIViewController, SignInDataSource {
+	
+	// MARK: Properties
+	var currentUser: User?
+	@IBOutlet weak var addCourseTabBarItem: UIBarButtonItem!
+	
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		// Do any additional setup after loading the view, typically from a nib.
+		
 	}
-
-	override func didReceiveMemoryWarning() {
-		super.didReceiveMemoryWarning()
-		// Dispose of any resources that can be recreated.
+	override func viewWillAppear(animated: Bool) {
+		super.viewWillAppear(animated)
+		
+		if currentUser != nil {
+			addCourseTabBarItem.enabled = true
+		} else {
+			addCourseTabBarItem.enabled = false
+		}
 	}
-
-
+	
+	// MARK: SignInDataSource
+	func setUser(name: String, password: String) -> Bool {
+		//currentUser = User(name, password)
+		return true;
+	}
+	
+	// MARK: Actions
+	@IBAction func signUp(sender: UIBarButtonItem) {
+		
+	}
 }
 
