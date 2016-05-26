@@ -17,7 +17,7 @@ class SignInViewController: UIViewController, UITextFieldDelegate {
 	
 	// MARK: - Properties
 	
-	var delegate: SignInDelegate?
+	weak var delegate: SignInDelegate?
 	@IBOutlet weak var nameTextField: UITextField!
 	@IBOutlet weak var passwordTextField: UITextField!
 	@IBOutlet weak var doneButton: UIBarButtonItem!

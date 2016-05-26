@@ -23,7 +23,7 @@ class AccountTableViewController: UITableViewController, SignInDelegate {
 	@IBOutlet weak var signOutTableViewCell: UITableViewCell!
 	@IBOutlet weak var infoUserTableViewCell: UITableViewCell!
 	
-	var user: User? {
+	weak var user: User? {
 		didSet {
 			updateUI()
 		}
