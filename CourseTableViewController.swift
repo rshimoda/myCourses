@@ -9,37 +9,43 @@
 import UIKit
 
 
-class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, DZNEmptyDataSetDelegate, SignInDelegate {
+class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, DZNEmptyDataSetDelegate, SignInDelegate, AccountsDataSource {
 	
 	// MARK: - Properties
 	
-	var user = User.currentUser {
+	let defaults = NSUserDefaults.standardUserDefaults()
+	
+	var user: User? {
 		willSet {
-			User.currentUser = newValue
+			if newValue != nil {
+				self.signUpBarButtonItem.tintColor = UIColor.darkGrayColor()
+				self.addCourseBarButtunItem.enabled = true
+			} else {
+				self.signUpBarButtonItem.tintColor = UIColor.lightGrayColor()
+				self.addCourseBarButtunItem.enabled = false
+			}
+		}
+		didSet {
+			defaults.setObject(user?.login, forKey: "currentUser")
+			user?.loadCourses()
+			self.tableView.reloadData()
 		}
 	}
+	
 	@IBOutlet weak var signUpBarButtonItem: UIBarButtonItem!
+	@IBOutlet weak var addCourseBarButtunItem: UIBarButtonItem!
+	//__________________________________________________________________________________________________________________
 
 	// MARK: - Loading
 	
     override func viewDidLoad() {
         super.viewDidLoad()
 		
+		user = User.getUserWithLogin(defaults.stringForKey("currentUser") ?? "")
+		
 		tableView.emptyDataSetSource = self
 		tableView.emptyDataSetDelegate = self
-		
 		tableView.tableFooterView = UIView()
-		
-		if user != nil {
-			signUpBarButtonItem.tintColor = UIColor.grayColor()
-		} else {
-			signUpBarButtonItem.tintColor = UIColor.blueColor()
-		}
-
-		if user != nil {
-			loadCourses()
-		}
-		
 		self.tableView.reloadData()
 		
         // Uncomment the following line to preserve selection between presentations
@@ -48,65 +54,36 @@ class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, D
         // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
         // self.navigationItem.rightBarButtonItem = self.editButtonItem()
     }
-	
-	func loadCourses() {
-		let courseImage = UIImage(named: "defaultImage")
-		let course1 = Course(name: "Developing iOS apps", university: "Stanford University")
-		course1.rating = 5
-		course1.courseImage = courseImage
-		
-		let course2 = Course(name: "Machine Learning", university: "MIT")
-		course2.rating = 4
-		course2.courseImage = courseImage
-		
-		user?.courses += [course1,  course2]
-	}
+	//__________________________________________________________________________________________________________________
 
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-	
 	// MARK: - DZEmptyDataSetDelegate & DZEmptyDataSetSource
 	
 	func titleForEmptyDataSet(scrollView: UIScrollView!) -> NSAttributedString! {
-		let str = "No courses yet..."
-		let attrs = [NSFontAttributeName: UIFont.preferredFontForTextStyle(UIFontTextStyleHeadline)]
-		return NSAttributedString(string: str, attributes: attrs)
+		return NSAttributedString(string: "Courses List Empty", attributes: [NSFontAttributeName: UIFont.preferredFontForTextStyle(UIFontTextStyleHeadline)])
 	}
 	
 	func descriptionForEmptyDataSet(scrollView: UIScrollView!) -> NSAttributedString! {
-		let str = "Tap the button below to add your first course."
-		let attrs = [NSFontAttributeName: UIFont.preferredFontForTextStyle(UIFontTextStyleBody)]
-		return NSAttributedString(string: str, attributes: attrs)
+		return NSAttributedString(string: "You can add course using '+' button.", attributes: [NSFontAttributeName: UIFont.preferredFontForTextStyle(UIFontTextStyleBody)])
 	}
 	
 	func imageForEmptyDataSet(scrollView: UIScrollView!) -> UIImage! {
 		return UIImage(named: "defaultPhoto")
 	}
 	
-	func buttonTitleForEmptyDataSet(scrollView: UIScrollView!, forState state: UIControlState) -> NSAttributedString! {
-		let str = "Add Course"
-		let attrs = [NSFontAttributeName: UIFont.preferredFontForTextStyle(UIFontTextStyleCallout)]
-		return NSAttributedString(string: str, attributes: attrs)
-	}
+//	func buttonTitleForEmptyDataSet(scrollView: UIScrollView!, forState state: UIControlState) -> NSAttributedString! {
+//		return NSAttributedString(string: "Add New Course", attributes: [NSFontAttributeName: UIFont.preferredFontForTextStyle(UIFontTextStyleCallout)])
+//	}
 	
 	func emptyDataSetDidTapButton(scrollView: UIScrollView!) {
-		let ac = UIAlertController(title: "You must sign in first!", message: nil, preferredStyle: .Alert)
-		ac.addAction(UIAlertAction(title: "Okay", style: .Default, handler: nil))
-		presentViewController(ac, animated: true, completion: nil)
-	}
-	
-	// MARK: - SignInDelegate
-	
-	func setUser(name: String, password: String) -> Bool {
-		if let newUser = User.getUserIfExists(name, password: password) {
-			user = newUser
-			return true
+		if user == nil {
+			let ac = UIAlertController(title: "You must sign in first", message: nil, preferredStyle: .Alert)
+			ac.addAction(UIAlertAction(title: "Okay", style: .Default, handler: nil))
+			presentViewController(ac, animated: true, completion: nil)
 		} else {
-			return false
+			addCourse(addCourseBarButtunItem)
 		}
 	}
+	//__________________________________________________________________________________________________________________
 
     // MARK: - Table view data source
 
@@ -123,7 +100,6 @@ class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, D
     override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
 		let cellIdentifier = "CourseTableViewCell"
         let cell = tableView.dequeueReusableCellWithIdentifier(cellIdentifier, forIndexPath: indexPath) as! CourseTableViewCell
-		
 
 		let course = user?.courses[indexPath.row]
 		
@@ -133,7 +109,6 @@ class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, D
 		
         return cell
     }
-
 
     /*
     // Override to support conditional editing of the table view.
@@ -169,21 +144,62 @@ class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, D
         return true
     }
     */
+	//__________________________________________________________________________________________________________________
 
-    /*
-    // MARK: - Navigation
+	// MARK: - Navigation
 
     // In a storyboard-based application, you will often want to do a little preparation before navigation
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
-    }
-    */
-	
-	@IBAction func unwindToCourseList(sender: UIStoryboardSegue) {
-		if sender.sourceViewController is SignInViewController {
-			
+		switch segue.identifier! {
+		case "Sign Up":
+			let nvc = segue.destinationViewController as! UINavigationController
+			if let dvc = nvc.topViewController as? AccountTableViewController {
+				dvc.delegate = self
+			}
+		case "Show Course":
+			if let dvc = segue.destinationViewController as? UINavigationController {
+				if let tbc = dvc.viewControllers.first as? CourseDashboardViewController {
+					tbc.course = user?.courses[(tableView.indexPathForSelectedRow?.item)!]
+					tbc.user = user
+				}
+			}
+		default: break
 		}
 	}
-
+	
+	@IBAction func unwindToCourseList(sender: UIStoryboardSegue) {
+		if let svc = sender.sourceViewController as? AccountTableViewController {
+			user = svc.user
+		}
+	}
+	
+	@IBAction func signOutAndUnwindToCourseList(sender: UIStoryboardSegue) {
+		var userIntentsToSignOut = true
+		
+		let alertController = UIAlertController(title: "Sign Out", message: "Do you really want to Sign Out?", preferredStyle: .ActionSheet)
+		alertController.addAction(UIAlertAction(title: "Sign Out", style: .Default, handler: nil))
+		alertController.addAction(UIAlertAction(title: "Cancel", style: .Cancel, handler: {(action: UIAlertAction) -> Void in userIntentsToSignOut = false}))
+		presentViewController(alertController, animated: true, completion: nil)
+		
+		if userIntentsToSignOut {
+			user = nil
+		}
+	}
+	
+	// MARK: - Actions
+	
+	@IBAction func addCourse(sender: UIBarButtonItem) {
+		let alertController = UIAlertController(title: "Add new course", message: "Enter a course promo-code below", preferredStyle: .Alert)
+		alertController.addTextFieldWithConfigurationHandler { (coursePromoTextField) in
+			coursePromoTextField.placeholder = "Your Course's Promo Code"
+		}
+		alertController.addAction(UIAlertAction(title: "Add", style: .Default, handler: { (addAction) in
+			if let newCourse = Course.getCourseBySignature(alertController.textFields?.first?.text ?? "") {
+				self.user?.courses += [newCourse]
+				self.tableView.reloadData()
+			}
+		}))
+		alertController.addAction(UIAlertAction(title: "Cancel", style: .Cancel, handler: nil))
+		presentViewController(alertController, animated: true, completion: nil)
+	}
 }

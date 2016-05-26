@@ -8,23 +8,21 @@
 
 import UIKit
 
-
 protocol SignInDelegate {
-	func setUser(name: String, password: String) -> Bool
+	var user: User? { get set }
 }
 
 
 class SignInViewController: UIViewController, UITextFieldDelegate {
-
+	
 	// MARK: - Properties
 	
-	private var delegate: SignInDataSource?
-	var user: User?
+	var delegate: SignInDelegate?
 	@IBOutlet weak var nameTextField: UITextField!
 	@IBOutlet weak var passwordTextField: UITextField!
 	@IBOutlet weak var doneButton: UIBarButtonItem!
 	
-	// MARK: - Loading
+	// MARK: - Loading 
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
@@ -32,7 +30,7 @@ class SignInViewController: UIViewController, UITextFieldDelegate {
 		// Handle the text field's user input through delegate callbacks
 		nameTextField.delegate = self
 		
-		checkValidMailAndPassword()
+		doneButton.enabled = false
 	}
 	
 	
@@ -51,12 +49,6 @@ class SignInViewController: UIViewController, UITextFieldDelegate {
 	}
 	
 	func textFieldDidEndEditing(textField: UITextField) {
-		checkValidMailAndPassword()
-		
-		
-	}
-	
-	func checkValidMailAndPassword() {
 		let text = nameTextField.text ?? ""
 		doneButton.enabled = !text.isEmpty
 	}
@@ -66,20 +58,20 @@ class SignInViewController: UIViewController, UITextFieldDelegate {
 	@IBAction func cancel(sender: UIBarButtonItem) {
 		dismissViewControllerAnimated(true, completion: nil)
 	}
-	
-	override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-		if doneButton == sender as! UIBarButtonItem {
-			let email = nameTextField.text ?? ""
-			let password = passwordTextField.text ?? ""
+
+	override func shouldPerformSegueWithIdentifier(identifier: String, sender: AnyObject?) -> Bool {
+		let login = nameTextField.text ?? ""
+		let password = passwordTextField.text ?? ""
+		delegate?.user = User.getUserWithLogin(login, password: password)
+		
+		if delegate?.user == nil {
+			let alertController = UIAlertController(title: NSLocalizedString("Invalid Login or Password", comment: "The error message"), message: NSLocalizedString("Try again", comment: ""), preferredStyle: .Alert)
+			alertController.addAction(UIAlertAction(title: "Okay", style: .Default, handler: nil))
+			presentViewController(alertController, animated: true, completion: nil)
 			
-			user = User.getUserIfExists(email, password: password)
+			return false
+		} else {
+			return true
 		}
-	}
-	
-	// MARK: - Actions
-	
-	@IBAction func finishLogging(sender: UIBarButtonItem) {
-		delegate?.setUser(nameTextField.description, password: passwordTextField.description)
-		navigationController?.popViewControllerAnimated(true)
 	}
 }

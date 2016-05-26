@@ -26,7 +26,7 @@ class RatingControl: UIView {
 		}
 	}
 	var ratingButtons = [UIButton]()
-	let spacing = 5
+	@IBInspectable let spacing = 5
 	let startCount = 5
 	
 	// MARK: - Initialization
