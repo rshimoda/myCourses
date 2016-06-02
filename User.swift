@@ -8,27 +8,21 @@
 
 import Foundation
 
-class User {
-	
-	private enum Status {
-		case Student
-		case Teacher
-	}
+var knownUsers = [User]()
+
+class User: NSObject, NSCoding {
 
 	// MARK: - Properties
 	
 	let firstName: String
 	let secondName: String
-	let login: String
-	private let password: String
-	private let status: Status
-	let id = arc4random()
+	var login: String
+	var password: String
 	var image: UIImage?
 	var courses = [Course]()
+	var coursesPromos = [String]()
 	
-	private static var knownUsers = [User]()
-	
-	// MARK: - Methods
+	// MARK: - Actions
 	
 	static func getUserWithLogin(login: String, password: String) -> User? {
 		for knownUser in knownUsers {
@@ -39,13 +33,13 @@ class User {
 		return nil
 	}
 	
-	static func getUserWithLogin(login: String) -> User? {
+	static func getUserWithLogin(login: String) -> (User?, Int?) {
 		for knownUser in knownUsers {
 			if knownUser.login == login {
-				return knownUser
+				return (knownUser, knownUsers.indexOf(knownUser))
 			}
 		}
-		return nil
+		return (nil, nil)
 	}
 	
 	static func addUser(user: User) -> Bool {
@@ -58,50 +52,76 @@ class User {
 		
 		return true
 	}
+	
+	static func updateCourseToAllUsers(course: Course) {
+		for i in 0..<knownUsers.count {
+			for j in 0..<knownUsers[i].courses.count {
+				if knownUsers[i].courses[j].sigature == course.sigature {
+					knownUsers[i].courses[j] = course
+				}
+			}
+		}
+	}
+	
+	// MARK: - Types
+	
+	struct PropertyKey {
+		static let firstNameKey = "firstName"
+		static let lastNameKey = "lastName"
+		static let loginKey = "login"
+		static let passwordKey = "password"
+		static let imageKey = "image"
+		static let coursesKey = "courses"
+		static let completedAssignmentsKey = "completedAssignments"
+	}
+	
+	// MARK: - NSCoding
+	
+	func encodeWithCoder(aCoder: NSCoder) {
+		aCoder.encodeObject(firstName, forKey: PropertyKey.firstNameKey)
+		aCoder.encodeObject(secondName, forKey: PropertyKey.lastNameKey)
+		aCoder.encodeObject(login, forKey: PropertyKey.loginKey)
+		aCoder.encodeObject(password, forKey: PropertyKey.passwordKey)
+		aCoder.encodeObject(image, forKey: PropertyKey.imageKey)
+		aCoder.encodeObject(courses, forKey: PropertyKey.coursesKey)
+	}
+	
+	required convenience init?(coder aCoder: NSCoder) {
+		let firstName = aCoder.decodeObjectForKey(PropertyKey.firstNameKey) as! String
+		let lastName = aCoder.decodeObjectForKey(PropertyKey.lastNameKey) as! String
+		let login = aCoder.decodeObjectForKey(PropertyKey.loginKey) as! String
+		let password = aCoder.decodeObjectForKey(PropertyKey.passwordKey) as! String
+		let image = aCoder.decodeObjectForKey(PropertyKey.imageKey) as? UIImage
+		let courses = aCoder.decodeObjectForKey(PropertyKey.coursesKey) as! [Course]
+		
+		
+		self.init(login: login, password: password, firstName: firstName, secondName: lastName, image: image, courses: courses)
+	}
 		
 	// MARK: - Initialization
 	
-	init(login: String, password: String, isTeacher: Bool, firstName: String, secondName: String) {
+	init(login: String, password: String, firstName: String, secondName: String) {
 		self.login = login
 		self.password = password
-		self.status = isTeacher ? Status.Teacher : Status.Student
 		self.firstName = firstName
 		self.secondName = secondName
+		
+		super.init()
 	}
 	
-	// TODO: - Perform reading from CoreData
-	
-	static func loadUsers() {
-		knownUsers = [
-			User(
-				login: "admin",
-				password: "123",
-				isTeacher: true,
-				firstName: "Admin",
-				secondName: ""
-			),
-			User(
-				login: "paulhegarty@icloud.com",
-				password: "312",
-				isTeacher: true,
-				firstName: "Paul",
-				secondName: "Hegarty"
-			),
-			User(
-				login: "r.shimoda@icloud.com",
-				password: "123",
-				isTeacher: false,
-				firstName: "Sergey",
-				secondName: "Popov"
-			)
-		]
+	private init(login: String, password: String, firstName: String, secondName: String, image: UIImage?, courses: [Course]) {
+		self.login = login
+		self.password = password
+		self.firstName = firstName
+		self.secondName = secondName
+		self.image = image
+		self.courses = courses
+		
+		super.init()
 	}
 	
-	func loadCourses() {
-		if self.firstName == "Sergey" {
-			self.courses = [Course.knownCourses.first!]
-		} else if self.firstName == "Admin" {
-			self.courses = Course.knownCourses
-		}
-	}
+	// MARK: - Arciving Paths
+	
+	static let DocumentsDirectory = NSFileManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask).first!
+	static let ArchiveURL = DocumentsDirectory.URLByAppendingPathComponent("users")
 }

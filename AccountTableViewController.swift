@@ -12,16 +12,27 @@ protocol AccountsDataSource {
 	var user: User? { get set }
 }
 
-class AccountTableViewController: UITableViewController, SignInDelegate {
+protocol SignInDelegate {
+	var user: User? { get set }
+}
+
+class AccountTableViewController: UITableViewController, UITextFieldDelegate {
 	
 	// MARK: - Properties
 	@IBOutlet weak var firstName: UILabel!
 	@IBOutlet weak var secondName: UILabel!
 	@IBOutlet weak var userImage: UIImageView!
+	@IBOutlet weak var userLogin: UILabel!
 	@IBOutlet weak var signOutLabel: UILabel!
 	@IBOutlet weak var usersInitials: UILabel!
+	@IBOutlet weak var signInLabel: UILabel!
 	@IBOutlet weak var signOutTableViewCell: UITableViewCell!
+	@IBOutlet weak var signInTableViewCell: UITableViewCell!
+	@IBOutlet weak var registerTableViewCell: UITableViewCell!
 	@IBOutlet weak var infoUserTableViewCell: UITableViewCell!
+	@IBOutlet weak var authorizationFields: UIStackView!
+	@IBOutlet weak var emailTextField: UITextField!
+	@IBOutlet weak var passwordTextField: UITextField!
 	
 	weak var user: User? {
 		didSet {
@@ -34,57 +45,74 @@ class AccountTableViewController: UITableViewController, SignInDelegate {
 	// MARK: - Loading
 	
 	override func viewDidLoad() {
+		emailTextField.delegate = self
 		user = delegate?.user
 	}
 	
 	// MARK: - Navigation
 	
 	override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-		if let dvc = segue.destinationViewController as? SignInViewController {
-			dvc.delegate = self
-		}
-	}
-	
-	override func shouldPerformSegueWithIdentifier(identifier: String, sender: AnyObject?) -> Bool {
-		if identifier == "Sign In" || user == nil {
-			return true
-		}
-		
-		return signOutLabel.enabled
-	}
-	
-	@IBAction func unwindToAccounts(sender: UIStoryboardSegue) {
-		if let svc = sender.sourceViewController as? SignInViewController {
-			svc.delegate = self
-		}
-		
-		if sender.sourceViewController is SignInViewController {
-			if user == nil {
-				let alertController = UIAlertController(title: "Autorization Failed", message: "Try to sign up again", preferredStyle: .Alert)
-				alertController.addAction(UIAlertAction(title: "Okay", style: .Default, handler: nil))
-				presentViewController(alertController, animated: true, completion: nil)
+		if let dvc = segue.destinationViewController as? CourseTableViewController {
+			if user != nil && !signOutLabel.enabled {
+				dvc.user = user
 			}
 		}
+	}
+	
+	// MARK: - UITextFieldDelegate
+	
+	func textFieldShouldReturn(textField: UITextField) -> Bool {
+		//Hide the keyboard
+		textField.resignFirstResponder()
+		
+		return true
+	}
+	
+	func textFieldDidBeginEditing(textField: UITextField) {
+		// Disable Save button while editing
+		signInLabel.enabled = false
+	}
+	
+	func textFieldDidEndEditing(textField: UITextField) {
+		let text = emailTextField.text ?? ""
+		signInLabel.enabled = !text.isEmpty
+	}
+	
+	// MARK: - Navigation
+	
+	@IBAction func cancel(sender: UIBarButtonItem) {
+		dismissViewControllerAnimated(true, completion: nil)
 	}
 	
 	// MARK: - Actions
 	
 	private func updateUI() {
 		if user == nil {
-			signOutLabel.enabled = false
-			signOutTableViewCell.selectionStyle = .None
+			signOutTableViewCell.hidden = true
+			
+			signInTableViewCell.hidden = false
+			registerTableViewCell.hidden = false
+			
 			usersInitials.text = " "
+			userLogin.text = " "
+			
+			authorizationFields.hidden = false
 		} else {
-			signOutLabel.enabled = true
-			signOutTableViewCell.selectionStyle = .Default
+			signOutTableViewCell.hidden = false
+			
+			signInTableViewCell.hidden = true
+			registerTableViewCell.hidden = true
 			
 			firstName.text = user?.firstName ?? " "
 			secondName.text = user?.secondName ?? " "
 			userImage.image = user?.image
+			userLogin.text = user?.login
 
 			let firstNameLetter = user?.firstName[(user?.firstName.startIndex)!] ?? " "
 			let secondNameLetter = user?.secondName[(user?.secondName.startIndex)!] ?? " "
 			usersInitials.text = String([ firstNameLetter, secondNameLetter ])
+			
+			authorizationFields.hidden = true
 		}
 	}
 }

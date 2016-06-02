@@ -18,19 +18,22 @@ class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, D
 	var user: User? {
 		willSet {
 			if newValue != nil {
-				self.signUpBarButtonItem.tintColor = UIColor.darkGrayColor()
-				self.addCourseBarButtunItem.enabled = true
-			} else {
 				self.signUpBarButtonItem.tintColor = UIColor.lightGrayColor()
+				self.addCourseBarButtunItem.enabled = true
+//				self.navigationItem.leftBarButtonItems![1].enabled = true
+			} else {
+				self.signUpBarButtonItem.tintColor = UIColor.darkGrayColor()
 				self.addCourseBarButtunItem.enabled = false
+//				self.navigationItem.leftBarButtonItems![1].enabled = false
 			}
 		}
 		didSet {
 			defaults.setObject(user?.login, forKey: "currentUser")
-			user?.loadCourses()
 			self.tableView.reloadData()
 		}
 	}
+	
+	private var id: Int?
 	
 	@IBOutlet weak var signUpBarButtonItem: UIBarButtonItem!
 	@IBOutlet weak var addCourseBarButtunItem: UIBarButtonItem!
@@ -41,7 +44,15 @@ class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, D
     override func viewDidLoad() {
         super.viewDidLoad()
 		
-		user = User.getUserWithLogin(defaults.stringForKey("currentUser") ?? "")
+		if let savedUsers = loadUsers() {
+			knownUsers += savedUsers
+		}
+		
+		if let savedCourses = loadCourses() {
+			knownCourses += savedCourses
+		}
+		
+		(user, id) = User.getUserWithLogin(defaults.stringForKey("currentUser") ?? "")
 		
 		tableView.emptyDataSetSource = self
 		tableView.emptyDataSetDelegate = self
@@ -51,9 +62,10 @@ class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, D
         // Uncomment the following line to preserve selection between presentations
         // self.clearsSelectionOnViewWillAppear = false
 
-        // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
-        // self.navigationItem.rightBarButtonItem = self.editButtonItem()
+        // Display an Edit button in the navigation bar for this view controller.
+//         self.navigationItem.leftBarButtonItems![1] = self.editButtonItem()
     }
+	
 	//__________________________________________________________________________________________________________________
 
 	// MARK: - DZEmptyDataSetDelegate & DZEmptyDataSetSource
@@ -67,25 +79,11 @@ class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, D
 	}
 	
 	func imageForEmptyDataSet(scrollView: UIScrollView!) -> UIImage! {
-		return UIImage(named: "defaultPhoto")
-	}
-	
-//	func buttonTitleForEmptyDataSet(scrollView: UIScrollView!, forState state: UIControlState) -> NSAttributedString! {
-//		return NSAttributedString(string: "Add New Course", attributes: [NSFontAttributeName: UIFont.preferredFontForTextStyle(UIFontTextStyleCallout)])
-//	}
-	
-	func emptyDataSetDidTapButton(scrollView: UIScrollView!) {
-		if user == nil {
-			let ac = UIAlertController(title: "You must sign in first", message: nil, preferredStyle: .Alert)
-			ac.addAction(UIAlertAction(title: "Okay", style: .Default, handler: nil))
-			presentViewController(ac, animated: true, completion: nil)
-		} else {
-			addCourse(addCourseBarButtunItem)
-		}
+		return UIImage(named: "graduationBig")
 	}
 	//__________________________________________________________________________________________________________________
 
-    // MARK: - Table view data source
+	// MARK: - Table view data source
 
     override func numberOfSectionsInTableView(tableView: UITableView) -> Int {
         // Return the number of sections
@@ -106,29 +104,30 @@ class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, D
 		cell.courseName.text = course!.name
 		cell.universityName.text = course!.university
 		cell.ratingControl.rating = course!.rating
+		cell.photoImageView.image = course!.courseImage
 		
         return cell
     }
 
-    /*
+    
     // Override to support conditional editing of the table view.
     override func tableView(tableView: UITableView, canEditRowAtIndexPath indexPath: NSIndexPath) -> Bool {
         // Return false if you do not want the specified item to be editable.
         return true
     }
-    */
-
-    /*
+	
     // Override to support editing the table view.
     override func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
         if editingStyle == .Delete {
             // Delete the row from the data source
+			user?.courses.removeAtIndex(indexPath.row)
+			saveUsers()
             tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
         } else if editingStyle == .Insert {
             // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
         }    
     }
-    */
+
 
     /*
     // Override to support rearranging the table view.
@@ -160,6 +159,7 @@ class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, D
 			if let dvc = segue.destinationViewController as? UINavigationController {
 				if let tbc = dvc.viewControllers.first as? CourseDashboardViewController {
 					tbc.course = user?.courses[(tableView.indexPathForSelectedRow?.item)!]
+					tbc.courseID = (tableView.indexPathForSelectedRow?.item)!
 					tbc.user = user
 				}
 			}
@@ -173,17 +173,22 @@ class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, D
 		}
 	}
 	
+	@IBAction func registerAndUnwindToCourseList(sender: UIStoryboardSegue) {
+		let svc = sender.sourceViewController as! EmailTableViewController
+		
+		user = User.getUserWithLogin((svc.user?.login)!).0
+		knownUsers.append(user!)
+		saveUsers()
+	}
+	
+	@IBAction func signInAndUnwindToCourseList(sender: UIStoryboardSegue) {
+		let svc = sender.sourceViewController as! AccountTableViewController
+		
+		user = User.getUserWithLogin(svc.emailTextField.text ?? "", password: svc.passwordTextField.text ?? "")
+	}
+	
 	@IBAction func signOutAndUnwindToCourseList(sender: UIStoryboardSegue) {
-		var userIntentsToSignOut = true
-		
-		let alertController = UIAlertController(title: "Sign Out", message: "Do you really want to Sign Out?", preferredStyle: .ActionSheet)
-		alertController.addAction(UIAlertAction(title: "Sign Out", style: .Default, handler: nil))
-		alertController.addAction(UIAlertAction(title: "Cancel", style: .Cancel, handler: {(action: UIAlertAction) -> Void in userIntentsToSignOut = false}))
-		presentViewController(alertController, animated: true, completion: nil)
-		
-		if userIntentsToSignOut {
-			user = nil
-		}
+		user = nil
 	}
 	
 	// MARK: - Actions
@@ -196,10 +201,29 @@ class CourseTableViewController: UITableViewController, DZNEmptyDataSetSource, D
 		alertController.addAction(UIAlertAction(title: "Add", style: .Default, handler: { (addAction) in
 			if let newCourse = Course.getCourseBySignature(alertController.textFields?.first?.text ?? "") {
 				self.user?.courses += [newCourse]
+//				knownUsers[self.id!].courses += [newCourse]
 				self.tableView.reloadData()
+				self.saveUsers()
 			}
 		}))
 		alertController.addAction(UIAlertAction(title: "Cancel", style: .Cancel, handler: nil))
 		presentViewController(alertController, animated: true, completion: nil)
+	}
+	
+	// MARK: - NSCoding
+	
+	func saveUsers() {
+		let isSuccessfulSave = NSKeyedArchiver.archiveRootObject(knownUsers, toFile: User.ArchiveURL.path!)
+		if !isSuccessfulSave {
+			print("Failed to save users...")
+		}
+	}
+	
+	func loadUsers() -> [User]? {
+		return NSKeyedUnarchiver.unarchiveObjectWithFile(User.ArchiveURL.path!) as? [User]
+	}
+	
+	func loadCourses() -> [Course]? {
+		return NSKeyedUnarchiver.unarchiveObjectWithFile(Course.ArchiveURL.path!) as? [Course]
 	}
 }

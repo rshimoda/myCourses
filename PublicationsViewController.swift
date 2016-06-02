@@ -9,7 +9,7 @@
 import UIKit
 
 class PublicationsViewController: UITableViewController {
-
+	
 	// MARK: - Loading
 	override func viewDidLoad() {
 		self.tableView.tableFooterView = UIView(frame: CGRectZero)

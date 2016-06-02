@@ -20,18 +20,22 @@ class OverviewViewController: UIViewController {
 	@IBOutlet weak var instructor: UILabel!
 	@IBOutlet weak var creationDate: UILabel!
 	@IBOutlet weak var updatedDate: UILabel!
+	@IBOutlet weak var courseDescription: UITextView!
 	
-	var course: Course!
+	weak var course: Course?
 	
 	//MARK: - Loading
 	
 	override func viewDidLoad() {
-		courseName.text = course.name
-		universityName.text = course.university
-		courseImage.image = course.courseImage
-		
-		instructor.text = "\(course.instructor?.firstName) \(course.instructor?.secondName)"
-		
-		// TODO: Add dates values
+		let dashboardController = navigationController?.viewControllers.first as? CourseDashboardViewController
+
+		courseName.text = dashboardController?.course?.name
+		universityName.text = dashboardController?.course?.university
+		courseImage.image = dashboardController?.course?.courseImage ?? UIImage(named: "defaultImage")!
+		duration.text = dashboardController?.course?.duration
+		instructor.text = "\((dashboardController?.course?.instructor?.firstName)!) \((dashboardController?.course?.instructor?.secondName)!)"
+		creationDate.text = dashboardController?.course?.created?.description
+		updatedDate.text = dashboardController?.course?.updated?.description
+		courseDescription.text = dashboardController?.course?.courseDescription
 	}
 }
