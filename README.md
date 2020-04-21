@@ -1,29 +1,30 @@
 # myCourses
 
-This is an iOS educational project for getting some practice of iOS Developement process.
+This is an iOS educational project for getting some practice with iOS Developement process.
+
 Used technologies:
-- Autolayout
+- Auto Layout
 - Interface Builder
 - UIKit (UITextField, UIButton, UINavigationBar, UIView, ...lots more...)
-- Testing with Xcode
+- Testing with Xcode (XCTest)
 - NSUserDefaults
-- NSCoding
+- Serialization (NSCoding)
 - Delegation
 - Protocols
 - Class, Structs, Enums
 - weak variables
 - computed properties
 - property observers
-- Swift foundation (Arrays, Dictionaries, AnyObject, ... )
-- Using external libraries (DZEmptyDataSet, Social, ... )
+- Swift Foundation (Arrays, Dictionaries, AnyObject, ... )
+- Using external libraries (DZEmptyDataSet, Social, ... ) via CocoaPods
 - Gesture recognition
 - Custom drawing
 - App lifecycle
 
-In this app were implemented:
-- User registration (all checks and savings too)
+In this app was implemented:
+- User registration (including credential checks and making records to the DB)
 - Creating new courses (and their availability for all users)
-- Getting envolvedto the course
-- Adding materials to the course (and getting it visible to all envolved students)
-- Sharing using Social library
-- Rating of the course 
+- Subscribing to a course
+- Adding materials to a course (including syncing it between all the students)
+- Cource or materials sharing using Social library
+- Course rating (sync included)
